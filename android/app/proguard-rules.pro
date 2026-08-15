@@ -1,0 +1,3 @@
+-keep class com.cairn.app.data.local.entity.** { *; }
+-keepattributes *Annotation*
+-keep class net.zetetic.database.** { *; }

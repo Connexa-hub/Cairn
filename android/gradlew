@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+# Standard Gradle wrapper launch script.
+# Run `gradle wrapper` locally once (with a system Gradle install) to
+# generate the accompanying gradle-wrapper.jar binary, which is not
+# checked in here since this environment can't fetch/build binaries.
+DIR="$(cd "$(dirname "$0")" && pwd)"
+exec gradle -p "$DIR" "$@"

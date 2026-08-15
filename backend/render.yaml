@@ -1,0 +1,35 @@
+# Render Blueprint — deploy with: Render Dashboard → New → Blueprint → point at this repo.
+# Free tier: use the "starter" plan values below; Render's free web service tier
+# spins down on idle, which is fine for a personal backup service.
+
+services:
+  - type: web
+    name: cairn-backup-backend
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: JWT_SECRET
+        sync: false          # set manually in the Render dashboard — never commit this
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cairn-backup-db
+          property: connectionString
+      - key: STORAGE_DIR
+        value: /app/storage
+      - key: MAX_UPLOAD_MB
+        value: "200"
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "10080"
+    disk:
+      name: cairn-backup-storage
+      mountPath: /app/storage
+      sizeGB: 1               # free tier disk allowance; raise if you archive many devices' backups
+
+databases:
+  - name: cairn-backup-db
+    plan: free
+    databaseName: cairn_backup
+    user: cairn_backup_user

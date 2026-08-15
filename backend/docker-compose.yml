@@ -1,0 +1,14 @@
+# Local dev convenience — Render deploys straight from the Dockerfile + render.yaml instead.
+version: "3.9"
+services:
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - JWT_SECRET=dev-only-secret-do-not-use-in-prod
+      - DATABASE_URL=sqlite:////app/storage/cairn_backend.db
+      - STORAGE_DIR=/app/storage
+      - MAX_UPLOAD_MB=200
+    volumes:
+      - ./storage:/app/storage
