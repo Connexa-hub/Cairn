@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, BigInteger
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, BigInteger, LargeBinary
 from sqlalchemy.orm import relationship
 
 from app.db.session import Base
@@ -24,19 +24,24 @@ class User(Base):
 
 class Backup(Base):
     """
-    Stores only metadata + a path to an opaque encrypted blob on disk.
-    This service has no code path capable of decrypting `filename`'s
-    contents — that key never exists server-side.
+    Stores metadata + the opaque encrypted blob itself, as a bytea column
+    in Postgres rather than a file on disk. This is deliberate: Render's
+    free-tier web services don't support persistent disks, but the free
+    Postgres database IS persistent — so storing ciphertext as a DB column
+    keeps backups durable across redeploys without needing a paid plan.
+    This service has no code path capable of decrypting `data`'s contents
+    — that key never exists server-side.
     """
     __tablename__ = "backups"
 
     id = Column(String, primary_key=True, default=gen_uuid)
     user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
     filename = Column(String, nullable=False)
-    storage_path = Column(String, nullable=False)
+    data = Column(LargeBinary, nullable=False)
     device_name = Column(String, nullable=True)
     size_bytes = Column(BigInteger, nullable=False)
     schema_version = Column(Integer, default=1)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     owner = relationship("User", back_populates="backups")
+

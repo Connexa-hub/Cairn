@@ -95,7 +95,10 @@ No separate "artifact" step needed here — Render builds the Docker image
 itself directly from your GitHub repo:
 
 1. [render.com](https://render.com) → **New → Blueprint** → connect the
-   same GitHub repo → Render finds `backend/render.yaml` automatically.
+   same GitHub repo. Render defaults to looking for `render.yaml` at the
+   repo root — since this repo keeps it at `backend/render.yaml`
+   alongside `android/` and `docs/`, set **Blueprint Path** to
+   `backend/render.yaml` on the setup screen.
 2. Set the `JWT_SECRET` secret in the Render dashboard (`openssl rand -hex
    32` for a real value).
 3. Deploy. Every push to `main` that touches `backend/` triggers a fresh

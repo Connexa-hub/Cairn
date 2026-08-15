@@ -1,6 +1,6 @@
-# Render Blueprint — deploy with: Render Dashboard → New → Blueprint → point at this repo.
-# Free tier: use the "starter" plan values below; Render's free web service tier
-# spins down on idle, which is fine for a personal backup service.
+# Render Blueprint — deploy with: Render Dashboard → New → Blueprint → point at
+# this repo → set "Blueprint Path" to backend/render.yaml (this file doesn't
+# live at the repo root, since the repo also contains android/ and docs/).
 
 services:
   - type: web
@@ -17,16 +17,18 @@ services:
         fromDatabase:
           name: cairn-backup-db
           property: connectionString
-      - key: STORAGE_DIR
-        value: /app/storage
       - key: MAX_UPLOAD_MB
-        value: "200"
+        # Free-tier Postgres has ~1GB total storage, and backups are stored as
+        # database rows (see note below) rather than on a disk, since free-tier
+        # web services on Render don't support persistent disks at all. Keep
+        # this modest unless you upgrade to a paid Postgres plan.
+        value: "50"
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: "10080"
-    disk:
-      name: cairn-backup-storage
-      mountPath: /app/storage
-      sizeGB: 1               # free tier disk allowance; raise if you archive many devices' backups
+    # No `disk:` block — free-tier web services don't support persistent disks.
+    # Encrypted backup blobs are stored as bytea rows in Postgres instead
+    # (see app/models/models.py — Backup.data), which IS persistent on the
+    # free tier and needs no extra Render feature to survive redeploys.
 
 databases:
   - name: cairn-backup-db

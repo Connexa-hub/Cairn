@@ -2,7 +2,6 @@ import io
 import os
 
 os.environ["DATABASE_URL"] = "sqlite:///./test_cairn_backend.db"
-os.environ["STORAGE_DIR"] = "./test_storage"
 os.environ["JWT_SECRET"] = "test-secret"
 
 from fastapi.testclient import TestClient  # noqa: E402

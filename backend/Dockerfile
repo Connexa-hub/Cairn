@@ -16,7 +16,8 @@ COPY app ./app
 ENV PORT=8000
 EXPOSE 8000
 
-# Persistent storage for encrypted backup blobs — mount a volume/disk here in production
-RUN mkdir -p /app/storage
+# No storage directory needed — encrypted backup blobs are stored as rows
+# in the Postgres database (app/models/models.py — Backup.data), not on
+# disk, since Render's free-tier web services have no persistent disk.
 
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]

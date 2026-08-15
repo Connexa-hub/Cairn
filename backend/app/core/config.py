@@ -13,8 +13,12 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 10080  # 7 days
 
     database_url: str = "sqlite:///./cairn_backend.db"
-    storage_dir: str = "./storage"
-    max_upload_mb: int = 200
+    # Backup blobs are stored as bytea rows in this same database (see
+    # app/models/models.py — Backup.data), not on disk — Render's free-tier
+    # web services have no persistent disk, so this keeps storage durable
+    # without needing a paid plan. max_upload_mb should stay modest on a
+    # free-tier Postgres instance (~1GB total storage).
+    max_upload_mb: int = 50
 
     class Config:
         env_file = ".env"

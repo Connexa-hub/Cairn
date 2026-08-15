@@ -7,8 +7,7 @@ services:
       - "8000:8000"
     environment:
       - JWT_SECRET=dev-only-secret-do-not-use-in-prod
-      - DATABASE_URL=sqlite:////app/storage/cairn_backend.db
-      - STORAGE_DIR=/app/storage
-      - MAX_UPLOAD_MB=200
-    volumes:
-      - ./storage:/app/storage
+      # SQLite file lives inside the container and won't survive a rebuild —
+      # fine for local dev. Point at a real Postgres URL to test persistence.
+      - DATABASE_URL=sqlite:///./cairn_backend.db
+      - MAX_UPLOAD_MB=50

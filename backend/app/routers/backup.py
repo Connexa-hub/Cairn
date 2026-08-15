@@ -1,9 +1,7 @@
-import os
-import shutil
 import uuid
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
-from fastapi.responses import FileResponse
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -15,12 +13,6 @@ from app.models.schemas import BackupMetaResponse
 router = APIRouter(prefix="/backup", tags=["backup"])
 
 
-def _user_storage_dir(user_id: str) -> str:
-    path = os.path.join(settings.storage_dir, user_id)
-    os.makedirs(path, exist_ok=True)
-    return path
-
-
 @router.post("/upload", response_model=BackupMetaResponse)
 async def upload_backup(
     file: UploadFile = File(...),
@@ -30,33 +22,34 @@ async def upload_backup(
 ):
     """
     Accepts an already-encrypted blob (AES-256-GCM ciphertext + header,
-    produced on-device by BackupCrypto). This endpoint never sees, needs,
-    or could derive the passphrase used to encrypt it — it just stores
-    bytes.
+    produced on-device by BackupCrypto) and stores it as a bytea column in
+    Postgres. This endpoint never sees, needs, or could derive the
+    passphrase used to encrypt it — it just stores bytes.
+
+    Stored in the database rather than on disk deliberately: Render's
+    free-tier web services have no persistent disk, but the free Postgres
+    database does persist, so this is what keeps backups durable on the
+    free tier.
     """
     max_bytes = settings.max_upload_mb * 1024 * 1024
-    backup_id = str(uuid.uuid4())
-    storage_dir = _user_storage_dir(current_user.id)
-    dest_path = os.path.join(storage_dir, f"{backup_id}.enc")
 
+    chunks = []
     size = 0
-    with open(dest_path, "wb") as out:
-        while chunk := await file.read(1024 * 1024):
-            size += len(chunk)
-            if size > max_bytes:
-                out.close()
-                os.remove(dest_path)
-                raise HTTPException(
-                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                    detail=f"Backup exceeds {settings.max_upload_mb}MB limit",
-                )
-            out.write(chunk)
+    while chunk := await file.read(1024 * 1024):
+        size += len(chunk)
+        if size > max_bytes:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"Backup exceeds {settings.max_upload_mb}MB limit",
+            )
+        chunks.append(chunk)
+    data = b"".join(chunks)
 
     backup = Backup(
-        id=backup_id,
+        id=str(uuid.uuid4()),
         user_id=current_user.id,
         filename=file.filename or "backup.enc",
-        storage_path=dest_path,
+        data=data,
         device_name=device_name,
         size_bytes=size,
         schema_version=1,
@@ -88,13 +81,13 @@ def download_backup(
         .filter(Backup.id == backup_id, Backup.user_id == current_user.id)
         .first()
     )
-    if not backup or not os.path.exists(backup.storage_path):
+    if not backup:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Backup not found")
 
-    return FileResponse(
-        backup.storage_path,
+    return Response(
+        content=backup.data,
         media_type="application/octet-stream",
-        filename=backup.filename,
+        headers={"Content-Disposition": f'attachment; filename="{backup.filename}"'},
     )
 
 
@@ -112,8 +105,6 @@ def delete_backup(
     if not backup:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Backup not found")
 
-    if os.path.exists(backup.storage_path):
-        os.remove(backup.storage_path)
     db.delete(backup)
     db.commit()
     return None
