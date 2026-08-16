@@ -1,19 +1,28 @@
 from datetime import datetime, timedelta, timezone
 
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from app.core.config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# bcrypt's algorithm has a hard 72-byte input limit; anything past that is
+# silently ignored by the cipher itself. Modern bcrypt (>=4.1) raises
+# ValueError instead of truncating, so we truncate explicitly here — the
+# same way on both hash and verify — rather than let a long passphrase
+# throw a 500. (Not using passlib: it's unmaintained since 2020 and its own
+# internal self-test is broken against bcrypt>=4.1, which is what actually
+# failed here — nothing to do with real password length.)
+_BCRYPT_MAX_BYTES = 72
 
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    truncated = password.encode("utf-8")[:_BCRYPT_MAX_BYTES]
+    return bcrypt.hashpw(truncated, bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
+    truncated = plain.encode("utf-8")[:_BCRYPT_MAX_BYTES]
+    return bcrypt.checkpw(truncated, hashed.encode("utf-8"))
 
 
 def create_access_token(subject: str) -> str:
