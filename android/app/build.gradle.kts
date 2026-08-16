@@ -39,7 +39,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // A real release keystore (via VAULT_KEYSTORE_* env vars, see RELEASE.md)
+            // A real release keystore (via CAIRN_KEYSTORE_* env vars, see RELEASE.md)
             // is used when present. Falling back to debug signing — rather than no
             // signing at all — keeps CI builds on forks/PRs actually installable for
             // testing; Android refuses to install a fully unsigned APK. Never ship
@@ -96,7 +96,12 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     implementation("androidx.room:room-paging:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
-    implementation("net.zetetic:android-database-sqlcipher:4.5.6")
+    // net.zetetic:sqlcipher-android is the actively-maintained successor to the
+    // deprecated net.zetetic:android-database-sqlcipher (which stopped at 4.5.4
+    // and won't get 16KB-page-size support Google now requires for Play Store).
+    // Uses SupportOpenHelperFactory (package net.zetetic.database.sqlcipher)
+    // rather than the old SupportFactory — see CairnDatabase.kt.
+    implementation("net.zetetic:sqlcipher-android:4.17.0")
     implementation("androidx.sqlite:sqlite:2.4.0")
 
     // Paging

@@ -37,17 +37,17 @@ jobs:
       - name: Unit tests
         run: ./gradlew testReleaseUnitTest --stacktrace
 
-      # Secrets are optional: if VAULT_KEYSTORE_BASE64 isn't set (e.g. a fork
+      # Secrets are optional: if CAIRN_KEYSTORE_BASE64 isn't set (e.g. a fork
       # without repo secrets), this step is skipped and the build below
-      # produces an unsigned release APK instead of failing.
+      # produces a debug-signed release APK instead of failing.
       - name: Decode signing keystore
-        if: ${{ secrets.VAULT_KEYSTORE_BASE64 != '' }}
+        if: ${{ secrets.CAIRN_KEYSTORE_BASE64 != '' }}
         run: |
-          echo "${{ secrets.VAULT_KEYSTORE_BASE64 }}" | base64 -d > release.keystore
-          echo "VAULT_KEYSTORE_PATH=$(pwd)/release.keystore" >> "$GITHUB_ENV"
-          echo "VAULT_KEYSTORE_PASSWORD=${{ secrets.VAULT_KEYSTORE_PASSWORD }}" >> "$GITHUB_ENV"
-          echo "VAULT_KEY_ALIAS=${{ secrets.VAULT_KEY_ALIAS }}" >> "$GITHUB_ENV"
-          echo "VAULT_KEY_PASSWORD=${{ secrets.VAULT_KEY_PASSWORD }}" >> "$GITHUB_ENV"
+          echo "${{ secrets.CAIRN_KEYSTORE_BASE64 }}" | base64 -d > release.keystore
+          echo "CAIRN_KEYSTORE_PATH=$(pwd)/release.keystore" >> "$GITHUB_ENV"
+          echo "CAIRN_KEYSTORE_PASSWORD=${{ secrets.CAIRN_KEYSTORE_PASSWORD }}" >> "$GITHUB_ENV"
+          echo "CAIRN_KEY_ALIAS=${{ secrets.CAIRN_KEY_ALIAS }}" >> "$GITHUB_ENV"
+          echo "CAIRN_KEY_PASSWORD=${{ secrets.CAIRN_KEY_PASSWORD }}" >> "$GITHUB_ENV"
 
       - name: Build release APK
         run: ./gradlew assembleRelease --stacktrace
@@ -61,7 +61,7 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: vault-release-apk
+          name: cairn-release-apk
           path: android/${{ steps.apk.outputs.path }}
 
       - name: Create GitHub Release with APK attached
@@ -69,11 +69,11 @@ jobs:
         with:
           files: android/${{ steps.apk.outputs.path }}
           generate_release_notes: true
-          name: Vault ${{ github.ref_name }}
+          name: Cairn ${{ github.ref_name }}
           body: |
             Built automatically by GitHub Actions from tag `${{ github.ref_name }}`.
 
             Install: download `app-release.apk` below, enable "Install unknown apps"
             for your file manager/browser if prompted, and open the file.
 
-            ${{ secrets.VAULT_KEYSTORE_BASE64 == '' && '⚠️ No release-signing secrets are configured in this repo, so this build is **debug-signed** (installable for testing, but not a real production signature — see RELEASE.md to add a real keystore).' || '' }}
+            ${{ secrets.CAIRN_KEYSTORE_BASE64 == '' && '⚠️ No release-signing secrets are configured in this repo, so this build is **debug-signed** (installable for testing, but not a real production signature — see RELEASE.md to add a real keystore).' || '' }}

@@ -40,5 +40,5 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: vault-debug-apk
+          name: cairn-debug-apk
           path: android/app/build/outputs/apk/debug/*.apk

@@ -7,6 +7,13 @@ services:
     name: cairn-backup-backend
     runtime: docker
     plan: free
+    # Render resolves dockerfilePath/dockerContext relative to the repo
+    # root by default — NOT relative to wherever this render.yaml file
+    # lives. Since this repo also has android/ and docs/ alongside
+    # backend/, rootDir tells Render "treat backend/ as the base for
+    # every path below" so ./Dockerfile and dockerContext: . correctly
+    # resolve to backend/Dockerfile and backend/ respectively.
+    rootDir: backend
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /health

@@ -11,7 +11,7 @@ import com.cairn.app.data.local.dao.CallLogDao
 import com.cairn.app.data.local.dao.ContactDao
 import com.cairn.app.data.local.entity.*
 import com.cairn.app.data.security.DbKeyManager
-import net.sqlcipher.database.SupportFactory
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @Database(
     entities = [
@@ -46,10 +46,14 @@ abstract class CairnDatabase : RoomDatabase() {
 
         private fun build(context: Context, keyManager: DbKeyManager): CairnDatabase {
             // Loads the native SQLCipher libs; safe to call repeatedly.
+            // Uses net.zetetic:sqlcipher-android (SupportOpenHelperFactory), the
+            // actively-maintained successor to the now-deprecated
+            // net.zetetic:android-database-sqlcipher / SupportFactory — see
+            // https://www.zetetic.net/sqlcipher/sqlcipher-for-android-migration/
             System.loadLibrary("sqlcipher")
 
             val passphrase = keyManager.getOrCreatePassphrase()
-            val factory = SupportFactory(passphrase)
+            val factory = SupportOpenHelperFactory(passphrase)
 
             return Room.databaseBuilder(context, CairnDatabase::class.java, DB_NAME)
                 .openHelperFactory(factory)
