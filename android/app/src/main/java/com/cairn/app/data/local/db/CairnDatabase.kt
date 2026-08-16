@@ -34,6 +34,24 @@ abstract class CairnDatabase : RoomDatabase() {
     abstract fun contactDao(): ContactDao
     abstract fun callLogDao(): CallLogDao
 
+    /**
+     * PRAGMA/VACUUM aren't statement types Room's compiler can classify as
+     * SELECT/INSERT/UPDATE/DELETE, so they can't be @Query DAO methods —
+     * that's what broke KSP codegen originally. Running them directly
+     * against the underlying SupportSQLiteDatabase is the correct pattern
+     * for maintenance statements like these. Both are blocking calls —
+     * callers (CallLogRepository) dispatch them on Dispatchers.IO.
+     */
+    fun runIntegrityCheckBlocking(): Boolean {
+        openHelper.writableDatabase.query("PRAGMA integrity_check").use { cursor ->
+            return cursor.moveToFirst() && cursor.getString(0).equals("ok", ignoreCase = true)
+        }
+    }
+
+    fun vacuumBlocking() {
+        openHelper.writableDatabase.execSQL("VACUUM")
+    }
+
     companion object {
         const val DB_NAME = "cairn_encrypted.db"
 

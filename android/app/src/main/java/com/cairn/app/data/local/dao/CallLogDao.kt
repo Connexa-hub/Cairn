@@ -123,14 +123,6 @@ interface CallLogDao {
 
     @Query("SELECT DISTINCT strftime('%Y', timestampEpoch / 1000, 'unixepoch') FROM call_logs ORDER BY 1 DESC")
     suspend fun availableYears(): List<String>
-
-    // ---- Maintenance ----
-
-    @Query("PRAGMA integrity_check")
-    suspend fun integrityCheck(): List<String>
-
-    @Query("VACUUM")
-    suspend fun vacuum()
 }
 
 data class ContactCallCount(val contactId: Long, val cnt: Int)

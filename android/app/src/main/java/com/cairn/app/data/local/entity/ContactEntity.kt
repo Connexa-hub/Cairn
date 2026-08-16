@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "contacts",
-    indices = [Index("display_name"), Index("is_favorite")]
+    indices = [Index("displayName"), Index("isFavorite")]
 )
 data class ContactEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,

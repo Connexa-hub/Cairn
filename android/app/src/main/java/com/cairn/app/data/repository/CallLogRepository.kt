@@ -5,10 +5,13 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import com.cairn.app.data.local.dao.CallLogDao
 import com.cairn.app.data.local.dao.PeriodCount
+import com.cairn.app.data.local.db.CairnDatabase
 import com.cairn.app.data.local.entity.CallLogEntity
 import com.cairn.app.data.local.entity.CallType
 import com.cairn.app.domain.usecase.SearchQueryParser
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
@@ -30,7 +33,8 @@ private const val PAGE_SIZE = 50
 
 @Singleton
 class CallLogRepository @Inject constructor(
-    private val dao: CallLogDao
+    private val dao: CallLogDao,
+    private val database: CairnDatabase
 ) {
     private fun pager(source: () -> androidx.paging.PagingSource<Int, CallLogEntity>) =
         Pager(PagingConfig(pageSize = PAGE_SIZE, prefetchDistance = PAGE_SIZE, enablePlaceholders = false)) {
@@ -101,7 +105,11 @@ class CallLogRepository @Inject constructor(
 
     suspend fun availableYears(): List<String> = dao.availableYears()
 
-    suspend fun runIntegrityCheck(): Boolean = dao.integrityCheck().firstOrNull() == "ok"
+    suspend fun runIntegrityCheck(): Boolean = withContext(Dispatchers.IO) {
+        database.runIntegrityCheckBlocking()
+    }
 
-    suspend fun vacuum() = dao.vacuum()
+    suspend fun vacuum() = withContext(Dispatchers.IO) {
+        database.vacuumBlocking()
+    }
 }

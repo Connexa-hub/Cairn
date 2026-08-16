@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.dagger.hilt.android")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("com.google.devtools.ksp")
@@ -61,9 +62,9 @@ android {
         compose = true
         buildConfig = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.14"
-    }
+    // Compose compiler version/config now lives in the org.jetbrains.kotlin.plugin.compose
+    // plugin (applied above) as of Kotlin 2.0+ — the old composeOptions {
+    // kotlinCompilerExtensionVersion } mechanism is retired and no longer needed.
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -76,12 +77,20 @@ android {
     }
 }
 
+// Room's schema JSON export (exportSchema = true in CairnDatabase.kt) needs an
+// explicit output directory for the KSP-based Room compiler — without this,
+// KSP only warns (schema history just isn't written), but tracking real
+// migration history matters for a decade-scale archive, so export it for real.
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     // Core / Compose
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
     implementation("androidx.activity:activity-compose:1.9.1")
-    implementation(platform("androidx.compose:compose-bom:2024.06.00"))
+    implementation(platform("androidx.compose:compose-bom:2026.06.01"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
@@ -92,10 +101,13 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.4")
 
     // Room + SQLCipher
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
-    implementation("androidx.room:room-paging:2.6.1")
-    ksp("androidx.room:room-compiler:2.6.1")
+    // Room 2.8.4 is current stable and the version that requires/targets Kotlin
+    // 2.0+ with KSP2 support — pairs with the Kotlin 2.1.20/KSP 2.1.20-1.0.32
+    // toolchain declared in the root build.gradle.kts.
+    implementation("androidx.room:room-runtime:2.8.4")
+    implementation("androidx.room:room-ktx:2.8.4")
+    implementation("androidx.room:room-paging:2.8.4")
+    ksp("androidx.room:room-compiler:2.8.4")
     // net.zetetic:sqlcipher-android is the actively-maintained successor to the
     // deprecated net.zetetic:android-database-sqlcipher (which stopped at 4.5.4
     // and won't get 16KB-page-size support Google now requires for Play Store).
@@ -109,11 +121,11 @@ dependencies {
     implementation("androidx.paging:paging-compose:3.3.2")
 
     // Hilt
-    implementation("com.google.dagger:hilt-android:2.51.1")
-    ksp("com.google.dagger:hilt-android-compiler:2.51.1")
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
-    implementation("androidx.hilt:hilt-work:1.2.0")
-    ksp("androidx.hilt:hilt-compiler:1.2.0")
+    implementation("com.google.dagger:hilt-android:2.59.2")
+    ksp("com.google.dagger:hilt-android-compiler:2.59.2")
+    implementation("androidx.hilt:hilt-navigation-compose:1.4.0")
+    implementation("androidx.hilt:hilt-work:1.4.0")
+    ksp("androidx.hilt:hilt-compiler:1.4.0")
 
     // WorkManager
     implementation("androidx.work:work-runtime-ktx:2.9.1")
