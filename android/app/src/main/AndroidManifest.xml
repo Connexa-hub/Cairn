@@ -13,6 +13,15 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!-- READ_PHONE_STATE / PROCESS_OUTGOING_CALLS imply telephony hardware by
+         default, which would wrongly exclude Chromebooks/tablets/other
+         non-phone devices from the Play Store listing. Cairn's call archive
+         features are simply inactive (nothing to import/listen for) on a
+         device with no telephony — so this is correctly optional. -->
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
+
     <application
         android:name=".CairnApplication"
         android:allowBackup="false"
