@@ -75,5 +75,3 @@ jobs:
 
             Install: download `app-release.apk` below, enable "Install unknown apps"
             for your file manager/browser if prompted, and open the file.
-
-            ${{ secrets.CAIRN_KEYSTORE_BASE64 == '' && '⚠️ No release-signing secrets are configured in this repo, so this build is **debug-signed** (installable for testing, but not a real production signature — see RELEASE.md to add a real keystore).' || '' }}
