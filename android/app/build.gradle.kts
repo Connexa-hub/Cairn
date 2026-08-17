@@ -166,5 +166,10 @@ dependencies {
     // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    // The Compose BOM must be applied separately to androidTestImplementation —
+    // it doesn't automatically extend from the main implementation configuration's
+    // BOM, which is why ui-test-junit4 (no explicit version, BOM-managed) failed
+    // to resolve with an empty version string.
+    androidTestImplementation(platform("androidx.compose:compose-bom:2026.06.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 }
