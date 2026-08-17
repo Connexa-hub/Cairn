@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Read-only import of existing contacts/call log; no write-back needed for archive -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
@@ -41,6 +42,22 @@
                 <action android:name="android.intent.action.PHONE_STATE" />
             </intent-filter>
         </receiver>
+
+        <!-- CairnApplication implements androidx.work.Configuration.Provider for
+             on-demand WorkManager initialization (see VaultApplication/CairnApplication.kt),
+             which requires explicitly removing the default WorkManagerInitializer
+             entry that androidx.startup would otherwise auto-register — lint enforces
+             this (RemoveWorkManagerInitializer) since having both active is invalid. -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
 
     </application>
 </manifest>
