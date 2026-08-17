@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.CallMade
 import androidx.compose.material.icons.filled.CallMissed
 import androidx.compose.material.icons.filled.CallReceived
 import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -70,7 +71,7 @@ fun CallRow(call: CallLogEntity, onClick: () -> Unit, modifier: Modifier = Modif
         },
         trailingContent = {
             if (call.note != null) {
-                Icon(androidx.compose.material.icons.Icons.Default.StickyNote2, contentDescription = "Has note")
+                Icon(Icons.Default.Edit, contentDescription = "Has note")
             }
         }
     )

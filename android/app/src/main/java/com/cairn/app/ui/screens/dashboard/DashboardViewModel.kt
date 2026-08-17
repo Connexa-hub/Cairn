@@ -10,6 +10,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -46,5 +47,5 @@ class DashboardViewModel @Inject constructor(
 
 /** Small helper: take the first emission of a Flow without pulling in extra deps. */
 private suspend fun <T> kotlinx.coroutines.flow.Flow<T>.collectLatestOnce(action: suspend (T) -> Unit) {
-    kotlinx.coroutines.flow.first { value -> action(value); true }
+    action(this.first())
 }

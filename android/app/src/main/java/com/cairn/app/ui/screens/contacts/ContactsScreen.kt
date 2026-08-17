@@ -1,5 +1,6 @@
 package com.cairn.app.ui.screens.contacts
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -32,7 +33,7 @@ fun ContactsScreen(
                 contacts[index]?.let { c ->
                     ListItem(
                         headlineContent = { Text(c.displayName) },
-                        modifier = Modifier.clickableRow { onOpenContact(c.id) }
+                        modifier = Modifier.clickable { onOpenContact(c.id) }
                     )
                 }
             }
@@ -40,5 +41,3 @@ fun ContactsScreen(
     }
 }
 
-private fun Modifier.clickableRow(onClick: () -> Unit): Modifier =
-    this.then(androidx.compose.foundation.clickable(onClick = onClick))
