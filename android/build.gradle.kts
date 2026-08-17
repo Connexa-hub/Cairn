@@ -12,7 +12,14 @@ plugins {
     // configured via this dedicated plugin instead of the old
     // composeOptions { kotlinCompilerExtensionVersion } mechanism.
     id("org.jetbrains.kotlin.plugin.compose") version "2.1.20" apply false
-    id("com.google.dagger.hilt.android") version "2.59.2" apply false
+    // Hilt is pinned to 2.57.2 rather than the latest — 2.59.x introduced a
+    // hard "requires AGP 9.0.0+" gate in the Gradle plugin (confirmed via
+    // dagger/dagger#5099, #5083: even Hilt's own AGP 9 support was broken
+    // across 2.58/2.59). AGP 9 is itself a large, still-stabilizing breaking
+    // migration (built-in Kotlin, new variant APIs) — not worth adopting
+    // just to satisfy Hilt's gate. 2.57.2 predates that requirement and
+    // works cleanly with AGP 8.x.
+    id("com.google.dagger.hilt.android") version "2.57.2" apply false
     id("org.jetbrains.kotlin.plugin.serialization") version "2.1.20" apply false
     id("com.google.devtools.ksp") version "2.1.20-1.0.32" apply false
 }
