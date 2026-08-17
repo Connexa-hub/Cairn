@@ -9,12 +9,14 @@ plugins {
 
 android {
     namespace = "com.cairn.app"
-    compileSdk = 34
+    // 36 is AGP 8.9.2's max recommended compileSdk (37+ requires AGP 9.1+,
+    // which we're deliberately not adopting yet — see Hilt version note below).
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.cairn.app"
         minSdk = 26
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -69,6 +71,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    // Deprecated (warns about Gradle 10 incompatibility) but proven working
+    // across every CI run so far — not touching it while there's an active
+    // build failure to fix. Worth migrating to the compilerOptions DSL in
+    // its own isolated change later, once verifiable against a real build.
     kotlinOptions {
         jvmTarget = "17"
     }
@@ -123,9 +129,15 @@ dependencies {
     // Hilt
     implementation("com.google.dagger:hilt-android:2.57.2")
     ksp("com.google.dagger:hilt-android-compiler:2.57.2")
-    implementation("androidx.hilt:hilt-navigation-compose:1.4.0")
-    implementation("androidx.hilt:hilt-work:1.4.0")
-    ksp("androidx.hilt:hilt-compiler:1.4.0")
+    // Pinned to 1.2.0 rather than latest — 1.4.0 hard-requires AGP 9.1.0+
+    // (same class of gate as core Hilt's AGP-9 requirement, confirmed by CI)
+    // and transitively drags in androidx.lifecycle 2.11.0, overriding our
+    // explicit 2.8.4 pin above. 1.2.0 has no such gate and was never the
+    // actual source of any real failure — it was bumped preemptively in an
+    // earlier pass without cause. Revisit once AGP 9 is actually adopted.
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    implementation("androidx.hilt:hilt-work:1.2.0")
+    ksp("androidx.hilt:hilt-compiler:1.2.0")
 
     // WorkManager
     implementation("androidx.work:work-runtime-ktx:2.9.1")
