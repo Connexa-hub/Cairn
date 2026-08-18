@@ -80,6 +80,13 @@ android {
     }
     packaging {
         resources.excludes.add("META-INF/*")
+        // Matches android:extractNativeLibs="true" in the manifest — SQLCipher's
+        // native .so has a well-documented UnsatisfiedLinkError failure mode on
+        // real devices unless native libs are extracted at install time rather
+        // than loaded compressed straight from the APK.
+        jniLibs {
+            useLegacyPackaging = true
+        }
     }
 }
 

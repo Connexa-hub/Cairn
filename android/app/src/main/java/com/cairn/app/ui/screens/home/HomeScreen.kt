@@ -1,5 +1,6 @@
 package com.cairn.app.ui.screens.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,17 +11,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.cairn.app.ui.components.CallRow
+import com.cairn.app.ui.components.DotMatrix
 import com.cairn.app.ui.screens.timeline.TimelineViewModel
+import com.cairn.app.ui.theme.CairnColors
 
 /**
- * Search-first home: a tappable search field up top (opens the full Search
- * overlay), quick-access tiles for the other pillars, then a live recent-
- * activity feed so the archive feels alive even before the user searches.
+ * Search-first home. Two deliberate departures from stock Material here,
+ * both aimed at not reading as "generic Google app": a quiet dot-matrix
+ * texture behind the header (Nothing OS's signature decorative language,
+ * used sparingly — never the focal point), and quick-access tiles that use
+ * Cash-App-style confident flat color blocking (one distinct color per
+ * tile) instead of identical small icon bubbles in a single repeated tint.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,11 +44,7 @@ fun HomeScreen(
 ) {
     val recentCalls = timelineViewModel.calls.collectAsLazyPagingItems()
 
-    Scaffold(
-        topBar = {
-            LargeTopAppBar(title = { Text("Cairn", fontWeight = FontWeight.Bold) })
-        }
-    ) { padding ->
+    Scaffold { padding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -49,9 +52,8 @@ fun HomeScreen(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            item {
-                SearchEntryField(onClick = onOpenSearch)
-            }
+            item { HomeHeader() }
+            item { SearchEntryField(onClick = onOpenSearch) }
             item {
                 QuickAccessRow(
                     onOpenContacts = onOpenContacts,
@@ -61,9 +63,7 @@ fun HomeScreen(
                     onOpenBackup = onOpenBackup
                 )
             }
-            item {
-                Text("Recent activity", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
-            }
+            item { SectionLabel("RECENT ACTIVITY", modifier = Modifier.padding(top = 8.dp)) }
             items(recentCalls.itemCount) { index ->
                 recentCalls[index]?.let { call ->
                     CallRow(call = call, onClick = { onOpenCall(call.id) })
@@ -74,11 +74,45 @@ fun HomeScreen(
 }
 
 @Composable
+private fun HomeHeader() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(88.dp)
+    ) {
+        // Quiet dot-matrix texture, confined to the right edge behind the
+        // wordmark — a nod to Nothing OS without literally copying their UI.
+        DotMatrix(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .size(120.dp, 88.dp)
+        )
+        Text(
+            "Cairn",
+            style = MaterialTheme.typography.displayLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.align(Alignment.CenterStart)
+        )
+    }
+}
+
+@Composable
+private fun SectionLabel(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier
+    )
+}
+
+@Composable
 private fun SearchEntryField(onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.surfaceVariant,
+        color = MaterialTheme.colorScheme.surface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, CairnColors.hairline),
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
@@ -97,6 +131,13 @@ private fun SearchEntryField(onClick: () -> Unit) {
     }
 }
 
+private data class QuickTile(
+    val label: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val color: Color,
+    val onClick: () -> Unit
+)
+
 @Composable
 private fun QuickAccessRow(
     onOpenContacts: () -> Unit,
@@ -106,28 +147,32 @@ private fun QuickAccessRow(
     onOpenBackup: () -> Unit
 ) {
     val tiles = listOf(
-        Triple("Contacts", Icons.Default.Contacts, onOpenContacts),
-        Triple("Timeline", Icons.Default.Timeline, onOpenTimeline),
-        Triple("Stats", Icons.Default.BarChart, onOpenDashboard),
-        Triple("Favorites", Icons.Default.Star, onOpenFavorites),
-        Triple("Backup", Icons.Default.Lock, onOpenBackup)
+        QuickTile("Contacts", Icons.Default.Contacts, CairnColors.tileContacts, onOpenContacts),
+        QuickTile("Timeline", Icons.Default.Timeline, CairnColors.tileTimeline, onOpenTimeline),
+        QuickTile("Stats", Icons.Default.BarChart, CairnColors.tileStats, onOpenDashboard),
+        QuickTile("Favorites", Icons.Default.Star, CairnColors.tileFavorites, onOpenFavorites),
+        QuickTile("Backup", Icons.Default.Lock, CairnColors.tileBackup, onOpenBackup)
     )
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-        tiles.forEach { (label, icon, action) ->
+        tiles.forEach { tile ->
             Surface(
-                onClick = action,
+                onClick = tile.onClick,
                 shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                modifier = Modifier.weight(1f).height(76.dp)
+                color = tile.color,
+                modifier = Modifier.weight(1f).height(80.dp)
             ) {
                 Column(
                     modifier = Modifier.fillMaxSize().padding(8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Icon(icon, contentDescription = label, tint = MaterialTheme.colorScheme.primary)
+                    Icon(tile.icon, contentDescription = tile.label, tint = Color.White)
                     Spacer(Modifier.height(4.dp))
-                    Text(label, style = MaterialTheme.typography.labelSmall)
+                    Text(
+                        tile.label,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White
+                    )
                 }
             }
         }

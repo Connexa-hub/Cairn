@@ -53,11 +53,15 @@ fun CairnNavHost(navController: NavHostController = rememberNavController()) {
     NavHost(navController = navController, startDestination = Routes.SPLASH) {
 
         composable(Routes.SPLASH) { SplashScreen(onFinished = {
-            navController.navigate(Routes.HOME) { popUpTo(Routes.SPLASH) { inclusive = true } }
+            navController.navigate(Routes.ONBOARDING) { popUpTo(Routes.SPLASH) { inclusive = true } }
         }) }
 
         composable(Routes.ONBOARDING) { OnboardingScreen(onDone = { navController.navigate(Routes.PERMISSIONS) }) }
-        composable(Routes.PERMISSIONS) { PermissionsScreen(onGranted = { navController.navigate(Routes.HOME) }) }
+        composable(Routes.PERMISSIONS) {
+            PermissionsScreen(onGranted = {
+                navController.navigate(Routes.HOME) { popUpTo(Routes.ONBOARDING) { inclusive = true } }
+            })
+        }
 
         composable(Routes.HOME) {
             HomeScreen(
