@@ -16,6 +16,14 @@ jobs:
         working-directory: android
     permissions:
       contents: write # required to create the GitHub Release
+    env:
+      # `secrets` is not a recognized named-value inside a step's `if:`
+      # condition (confirmed by GitHub's own workflow validator — a real,
+      # specific restriction, not general to `secrets` everywhere: it's
+      # still fine to reference secrets.* inside `run:` step bodies, as
+      # the steps below do). Routing it through `env` first works around
+      # this, since `env.*` IS valid inside `if:`.
+      HAS_KEYSTORE_SECRET: ${{ secrets.CAIRN_KEYSTORE_BASE64 != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -41,7 +49,7 @@ jobs:
       # without repo secrets), this step is skipped and the build below
       # produces a debug-signed release APK instead of failing.
       - name: Decode signing keystore
-        if: ${{ secrets.CAIRN_KEYSTORE_BASE64 != '' }}
+        if: env.HAS_KEYSTORE_SECRET == 'true'
         run: |
           echo "${{ secrets.CAIRN_KEYSTORE_BASE64 }}" | base64 -d > release.keystore
           echo "CAIRN_KEYSTORE_PATH=$(pwd)/release.keystore" >> "$GITHUB_ENV"
