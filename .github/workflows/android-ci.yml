@@ -13,6 +13,12 @@ jobs:
     defaults:
       run:
         working-directory: android
+    env:
+      # `secrets` is not a recognized named-value inside a step's `if:`
+      # condition (a real GitHub Actions restriction, confirmed via a prior
+      # workflow-validation error) — routing it through job-level `env:`
+      # first works around that, since `env.*` IS valid inside `if:`.
+      HAS_KEYSTORE_SECRET: ${{ secrets.CAIRN_KEYSTORE_BASE64 != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -42,3 +48,28 @@ jobs:
         with:
           name: cairn-debug-apk
           path: android/app/build/outputs/apk/debug/*.apk
+
+      # Release-configured build on every push, not just tags — so a release
+      # APK is available immediately without cutting a version tag. Signing
+      # secrets are optional here too: same fallback-to-debug-signing logic
+      # as android-release.yml (see app/build.gradle.kts signingConfigs
+      # block). The tag-triggered workflow is still the one that publishes
+      # an actual GitHub Release; this just makes a build available as a CI
+      # artifact on every push.
+      - name: Decode signing keystore
+        if: env.HAS_KEYSTORE_SECRET == 'true'
+        run: |
+          echo "${{ secrets.CAIRN_KEYSTORE_BASE64 }}" | base64 -d > release.keystore
+          echo "CAIRN_KEYSTORE_PATH=$(pwd)/release.keystore" >> "$GITHUB_ENV"
+          echo "CAIRN_KEYSTORE_PASSWORD=${{ secrets.CAIRN_KEYSTORE_PASSWORD }}" >> "$GITHUB_ENV"
+          echo "CAIRN_KEY_ALIAS=${{ secrets.CAIRN_KEY_ALIAS }}" >> "$GITHUB_ENV"
+          echo "CAIRN_KEY_PASSWORD=${{ secrets.CAIRN_KEY_PASSWORD }}" >> "$GITHUB_ENV"
+
+      - name: Assemble release APK
+        run: ./gradlew assembleRelease --stacktrace
+
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: cairn-release-apk
+          path: android/app/build/outputs/apk/release/*.apk
