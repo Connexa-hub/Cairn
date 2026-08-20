@@ -27,7 +27,20 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         StatsCacheEntity::class
     ],
     version = 1,
-    exportSchema = true
+    // exportSchema disabled: Room's schema round-trip (exporting, then
+    // deserializing an existing schema.json to diff against on the next
+    // build) hits a confirmed, open Google issue-tracker bug
+    // (issuetracker.google.com/issues/400483860) — an AbstractMethodError
+    // from a binary mismatch between Room's own bundled, pre-compiled
+    // kotlinx.serialization generated classes and whatever
+    // kotlinx-serialization-core version resolves on the build classpath.
+    // Not something reliably fixable by pinning a version here, since
+    // Room's side of that mismatch is fixed at whatever Room 2.8.4 itself
+    // was built against — a future dependency bump could reintroduce it
+    // just as easily. Schema-history tracking was a nice-to-have, not
+    // something the app depends on to function, so removing it entirely
+    // is the robust fix rather than chasing this upstream landmine.
+    exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class CairnDatabase : RoomDatabase() {

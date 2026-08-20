@@ -90,14 +90,6 @@ android {
     }
 }
 
-// Room's schema JSON export (exportSchema = true in CairnDatabase.kt) needs an
-// explicit output directory for the KSP-based Room compiler — without this,
-// KSP only warns (schema history just isn't written), but tracking real
-// migration history matters for a decade-scale archive, so export it for real.
-ksp {
-    arg("room.schemaLocation", "$projectDir/schemas")
-}
-
 dependencies {
     // Core / Compose
     implementation("androidx.core:core-ktx:1.13.1")
@@ -165,7 +157,16 @@ dependencies {
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-kotlinx-serialization:2.11.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    // Room 2.8.4's KSP-generated serializers (FieldBundle/EntityBundle/
+    // DatabaseBundle for schema export) require kotlinx-serialization-core
+    // >=1.8.0 — that release added typeParametersSerializers() to the
+    // GeneratedSerializer interface, and an older serialization-core on the
+    // same classpath is binary-incompatible with serializers compiled
+    // against the newer interface, producing a hard-to-read
+    // AbstractMethodError at KSP time. Bumping this alone isn't enough
+    // though — see the resolutionStrategy.force block below, which is what
+    // actually makes the separate `ksp` processor classpath agree.
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 
     // Image loading (avatars — local only)
     implementation("io.coil-kt:coil-compose:2.6.0")
@@ -179,4 +180,21 @@ dependencies {
     // to resolve with an empty version string.
     androidTestImplementation(platform("androidx.compose:compose-bom:2026.06.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+}
+
+// The `ksp` configuration (used by androidx.room:room-compiler, among
+// others) resolves independently of `implementation` — bumping the
+// kotlinx-serialization-json version above doesn't by itself guarantee the
+// KSP processor classpath agrees. Force a single consistent version across
+// every configuration to eliminate the binary-incompatibility that caused
+// the kspReleaseKotlin AbstractMethodError (Room's schema-export
+// serializers vs. an older kotlinx-serialization-core landing on the same
+// classpath).
+configurations.all {
+    resolutionStrategy {
+        force(
+            "org.jetbrains.kotlinx:kotlinx-serialization-core:1.10.0",
+            "org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0"
+        )
+    }
 }
